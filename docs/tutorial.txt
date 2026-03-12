@@ -1,0 +1,20 @@
+Cấu hình chuẩn bị:
+- B1: Tạo thư mục docker, thêm Dockerfile
+- B2: Ở Docker Desktop bật WSL Intergrate
+- B3: Vào terminal của VSCode khi đang kết nối tới WSL chạy lệnh: docker --version --> Nếu có hiện ra version thì kết nối thành công
+- B4: Trỏ vào thư mục docker: cd docker
+- B5: Chạy lệnh để build Dockerfile
+    docker build -t recon-sandbox .
+- B6: Sử dụng lệnh để kiểm tra: 
+    docker images
+- B7: Quay trở lại thư mục gốc của Project, tạo môi trường ảo
+    cd ..
+    python3 -m venv venv
+    source venv/bin/activate
+- B8: Tải các thư viện cần thiết: 
+    pip install pyautogen python-dotenv docker
+- B9: Tạo file biến môi trường .env ở thư mục gốc Project, thêm các key
+- B10: Thêm file config.py vào thư mục Agent
+- B11: Thêm file executor.py vào thư mục Agent
+- B12: Thêm core_agent.py vào thư mục Agent
+- B13: Thêm main.py để chạy thử: python -m agents.main
