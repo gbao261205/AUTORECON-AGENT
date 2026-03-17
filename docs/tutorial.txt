@@ -18,3 +18,10 @@ Cấu hình chuẩn bị:
 - B11: Thêm file executor.py vào thư mục Agent
 - B12: Thêm core_agent.py vào thư mục Agent
 - B13: Thêm main.py để chạy thử: python -m agents.main
+- B14: Sau khi chạy thử thành công, tạo file prompts.py để tách phần "tính cách" và "nhiệm vụ" ra riêng
+- B15: Sửa lại main.py để 4 agent có groupchat chung
+- B16: Chạy thử: python -m agents.main
+- B17: Update Prompt report để bỏ bớt log rác gây nhiễu
+- B16: Thêm tool vào Dockerfile --> build lại Dockerfile
+    docker build -t recon-sandbox .
+- B17: Chạy thử lại

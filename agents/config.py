@@ -10,7 +10,7 @@ load_dotenv()
 llm_config_groq = {
     "config_list": [
         {
-            "model": "llama-3.3-70b-versatile", 
+            "model": "llama-3.1-8b-instant", 
             "api_key": os.environ.get("GROQ_API_KEY"),
             "api_type": "groq",
         }
@@ -21,7 +21,7 @@ llm_config_groq = {
 llm_config_gemini = {
     "config_list": [
         {
-            "model": "gemini-1.5-pro", 
+            "model": "gemini-2.5-flash", 
             "api_key": os.environ.get("GEMINI_API_KEY"),
             "api_type": "google",
         }
@@ -31,3 +31,4 @@ llm_config_gemini = {
 
 # Chọn cấu hình mặc định muốn dùng (ở đây ví dụ dùng Groq)
 default_llm_config = llm_config_groq
+# default_llm_config = llm_config_gemini

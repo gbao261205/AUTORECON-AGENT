@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     iputils-ping \
     dirb \
+    jq \
     && rm -rf /var/lib/apt/lists/*
 
 # Cài đặt một số thư viện Python hỗ trợ mạng (nếu Agent cần viết script)

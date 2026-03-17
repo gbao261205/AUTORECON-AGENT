@@ -1,32 +1,87 @@
 # File: agents/main.py
-from autogen import AssistantAgent
+import os
+from datetime import datetime
+from autogen import GroupChat, GroupChatManager
+from agents.core_agents import (
+    create_user_proxy,
+    create_passive_recon_agent,
+    create_active_recon_agent,
+    create_reporter_agent
+)
 from agents.config import default_llm_config
-from agents.core_agents import create_user_proxy
 
-def test_docker_and_llm():
-    print("[*] Đang khởi tạo UserProxy (Docker Sandbox)...")
-    user_proxy = create_user_proxy()
-
-    print("[*] Đang khởi tạo Test Agent...")
+def run_pentest_workflow(target_domain: str):
+    print(f"[*] Đang khởi tạo đội ngũ Multi-Agent nhắm mục tiêu: {target_domain}...\n")
     
-    test_agent = AssistantAgent(
-        name="Test_Recon_Agent",
-        llm_config=default_llm_config,
-        system_message="""Bạn là một chuyên gia mạng.
-        Nhiệm vụ của bạn là viết script bash (bọc trong ```bash và ```) để chạy lệnh nmap quét 2 port 80 và 443 của mục tiêu.
-        
-        QUY TẮC BẮT BUỘC: 
-        1. Lần trả lời đầu tiên: CHỈ ĐƯỢC cung cấp code block, tuyệt đối KHÔNG chứa từ 'TERMINATE'.
-        2. Sau đó, UserProxy sẽ tự động chạy code của bạn và gửi lại kết quả nmap thực tế.
-        3. Chỉ sau khi bạn đọc được kết quả trả về từ UserProxy, bạn mới tóm tắt kết quả đó và in ra chữ 'TERMINATE' để kết thúc luồng.""",
+    user_proxy = create_user_proxy()
+    passive_agent = create_passive_recon_agent()
+    active_agent = create_active_recon_agent()
+    reporter_agent = create_reporter_agent()
+
+    agents_list = [user_proxy, passive_agent, active_agent, reporter_agent]
+    
+    groupchat = GroupChat(
+        agents=agents_list,
+        messages=[],
+        max_round=15,
+        speaker_selection_method="auto"
     )
 
-    print("[*] Bắt đầu luồng kiểm thử...")
-    user_proxy.initiate_chat(
-        test_agent,
-        message="Hãy viết script quét mục tiêu scanme.nmap.org giúp tôi.",
-        summary_method="reflection_with_llm",
+    manager = GroupChatManager(
+        groupchat=groupchat,
+        llm_config=default_llm_config
     )
+
+    print("[*] Bắt đầu luồng kiểm thử Phase 1 & 3...")
+    
+    initial_message = f"""
+    Mục tiêu Pentest (Phase 1 & 3) của chúng ta hôm nay là: {target_domain}.
+    
+    - Passive_Recon_Agent hãy bắt đầu trước. Thu thập thông tin IP và Subdomain.
+    - UserProxy sẽ chạy code giúp các bạn.
+    - Khi Passive xong, Active_Recon_Agent hãy quét Nmap vào IP tìm được.
+    - Cuối cùng, Reporter_Agent hãy tổng hợp thành file Markdown.
+    """
+    
+    # 1. Chạy luồng chat và HỨNG KẾT QUẢ VÀO BIẾN chat_result
+    chat_result = user_proxy.initiate_chat(
+        manager,
+        message=initial_message
+    )
+
+    # ==========================================
+    # NHIỆM VỤ 1: TỐI ƯU FILE OUTPUT
+    # ==========================================
+    print("\n[*] Đang trích xuất báo cáo và lưu ra file vật lý...")
+    
+    report_content = ""
+    # Duyệt ngược lịch sử chat để tìm tin nhắn cuối cùng của Reporter_Agent
+    for msg in reversed(chat_result.chat_history):
+        if msg.get("name") == "Reporter_Agent" and "TERMINATE" in msg.get("content", ""):
+            # Lấy nội dung và cắt bỏ chữ TERMINATE rác đi
+            report_content = msg.get("content").replace("TERMINATE", "").strip()
+            break
+            
+    if report_content:
+        # Lấy đường dẫn tuyệt đối của thư mục workspace
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        workspace_dir = os.path.join(base_dir, "workspace", "reports")
+        os.makedirs(workspace_dir, exist_ok=True)
+        
+        # Đặt tên file có chứa thời gian quét để không bị ghi đè
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_domain = target_domain.replace('.', '_')
+        filename = f"pentest_report_{safe_domain}_{timestamp}.md"
+        filepath = os.path.join(workspace_dir, filename)
+        
+        # Ghi nội dung ra file
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(report_content)
+            
+        print(f"\n[+] TUYỆT VỜI! Đã lưu báo cáo thành công tại: {filepath}")
+    else:
+        print("\n[-] Lỗi: Không tìm thấy nội dung báo cáo từ Reporter_Agent trong lịch sử chat.")
 
 if __name__ == "__main__":
-    test_docker_and_llm()
+    TARGET = "scanme.nmap.org"
+    run_pentest_workflow(TARGET)

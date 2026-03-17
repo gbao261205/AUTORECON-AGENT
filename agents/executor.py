@@ -19,9 +19,9 @@ def get_docker_executor():
 
     # Khởi tạo executor với image bạn đã build
     executor = DockerCommandLineCodeExecutor(
-        image="recon-sandbox",  # Tên image chúng ta đã build ở bước trước
-        timeout=120,            # Thời gian chạy tối đa cho 1 lệnh (Nmap có thể mất thời gian)
-        work_dir=workspace_dir  # Mount thư mục workspace vào Docker
+        image="recon-sandbox",  
+        timeout=300,            # TĂNG LÊN 300 GIÂY
+        work_dir=workspace_dir  
     )
     
     return executor
