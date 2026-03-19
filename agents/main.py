@@ -1,5 +1,6 @@
 # File: agents/main.py
 import os
+import re
 from datetime import datetime
 from autogen import GroupChat, GroupChatManager
 from agents.core_agents import (
@@ -58,8 +59,23 @@ def run_pentest_workflow(target_domain: str):
     # Duyệt ngược lịch sử chat để tìm tin nhắn cuối cùng của Reporter_Agent
     for msg in reversed(chat_result.chat_history):
         if msg.get("name") == "Reporter_Agent" and "TERMINATE" in msg.get("content", ""):
-            # Lấy nội dung và cắt bỏ chữ TERMINATE rác đi
-            report_content = msg.get("content").replace("TERMINATE", "").strip()
+            raw_content = msg.get("content").replace("TERMINATE", "").strip()
+            
+            # Ưu tiên lấy từ đúng đầu dòng Tiêu đề Report (Chống AI luyên thuyên viết văn bên trên)
+            if "# SECURITY" in raw_content.upper():
+                start_idx = raw_content.upper().find("# SECURITY")
+                report_content = raw_content[start_idx:].strip()
+                # Xóa dấu code block dư thừa ở cuối nếu AI bọc Report trong khung markdown
+                if report_content.endswith("```"):
+                    report_content = report_content[:-3].strip()
+            else:
+                # Nếu AI quên viết tiêu đề, thử tìm trong khung code Markdown khép kín
+                match_md = re.search(r'```markdown\n(.*?)\n```', raw_content, re.IGNORECASE | re.DOTALL)
+                if match_md:
+                    report_content = match_md.group(1).strip()
+                else:
+                    report_content = raw_content
+                
             break
             
     if report_content:
